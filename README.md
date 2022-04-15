@@ -15,22 +15,7 @@ Ejercicios básicos
 
    * Complete el cálculo de la autocorrelación e inserte a continuación el código correspondiente.
 
-  void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) const
-  {
-
-    for (unsigned int l = 0; l < r.size(); ++l)
-    {
-      r[l] = 0;
-      for (unsigned int n = l; n < x.size(); n++)
-      {
-        r[l] += x[n] * x[n - l];
-      }
-      r[l] /= x.size();
-    }
-
-    if (r[0] == 0.0F) // to avoid log() and divide zero
-      r[0] = 1e-10;
-  }
+<img width="665" alt="image" src="https://user-images.githubusercontent.com/100561275/163587917-0a102a57-07e2-43ba-93f4-b63ef27b373e.png">
 
    * Inserte una gŕafica donde, en un *subplot*, se vea con claridad la señal temporal de un segmento de
      unos 30 ms de un fonema sonoro y su periodo de pitch; y, en otro *subplot*, se vea con claridad la
@@ -44,25 +29,11 @@ Ejercicios básicos
    * Determine el mejor candidato para el periodo de pitch localizando el primer máximo secundario de la
      autocorrelación. Inserte a continuación el código correspondiente.
 	
-    for (iR = iRMax = r.begin() + npitch_min; iR < r.begin() + npitch_max; iR++)
-    {
-      if (*iR > *iRMax)
-      {
-        iRMax = iR;
-      }
-    }
+<img width="646" alt="image" src="https://user-images.githubusercontent.com/100561275/163587810-98420bee-37dc-4301-843d-878f1c2eb76d.png">
 
    * Implemente la regla de decisión sonoro o sordo e inserte el código correspondiente.
 	
-  bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const
-  {
-    bool unvoiced = true;
-    if ((rmaxnorm > umaxnorm || r1norm > 0.95))
-      unvoiced = false;
-    if (pot < -15)
-      unvoiced = true;
-    return unvoiced;
-  }
+<img width="646" alt="image" src="https://user-images.githubusercontent.com/100561275/163587854-f093fd4e-461e-48a5-9b0c-f048ddf1080c.png">
 
 - Una vez completados los puntos anteriores, dispondrá de una primera versión del estimador de pitch. El 
   resto del trabajo consiste, básicamente, en obtener las mejores prestaciones posibles con él.
@@ -138,74 +109,22 @@ Hemos utilizado la técnica de preprocesado center clipping y la técnica de pos
 
 A continuación adjuntamos el código de la normalización:
 
-  void PitchAnalyzer::normalize(vector<float> &x) const
-  {
-    float max = 0;
-    for (int i = 0; i < x.size(); i++)
-    {
-      if (x[i] > max)
-      {
-        max = x[i];
-      }
-    }
-    for (int i = 0; i < x.size(); i++)
-    {
-      x[i] /= max;
-    }
-  }
+<img width="475" alt="image" src="https://user-images.githubusercontent.com/100561275/163587605-e41f1ea5-f575-45b8-9ce2-8f102e7ff2c7.png">
 
 
 El center clipping consiste básicamente en anular los valores de la señal de magnitud pequeña. Con ello conseguimos dos cosas: al introducir una distorsión no lineal, aumentamos la intensidad de los armónicos de orden elevado y al poner a cero los instantes de tiempo donde la señal tiene amplitud menor, aumentamos robustez frente al ruido.
 A continuación adjuntamos el código del center clipping. Cabe comentar que curiosamente, pese a que hemos implementado el center clipping con offset, la fórmula utilizada no es exactamente la propuesta en el enunciado de la práctica, puesto que de esta forma el detector nos daba mejor SCORE total.
 			
-  void PitchAnalyzer::clip_center(vector<float> &x, float xth) const
-  {
-    for (int i = 0; i < x.size(); i++)
-    {
-      if (abs(x[i]) < xth)
-      {
-        x[i] = 0;
-      }
-      else if (x[i] < 0)
-      {
-        x[i] += xth;
-      }
-      else
-        x[i] += xth;
-    }
-  }
+<img width="582" alt="image" src="https://user-images.githubusercontent.com/100561275/163587544-24d87b47-1fc8-43f8-b4c7-f9fdcf529505.png">
+
+				 
 Como podemos ver, en el último else, se le suma el umbral a la muestra actual, en vez de restárselo.
 
 El filtro de mediana es un filtro no lineal que se basa en calcular el valor mediano en una ventana (de longitud 3 en nuestro caso) centrada en cada instante de tiempo. Lo usamos principalmente para evitar errores groseros en la estimación de la frecuencia de pitch.
 Código del filtro de mediana:
 			
-void median_filter(vector<float> &pitches)
-{
-  vector<float> sorted = pitches;
-  vector<float> sorting = pitches;
-  float a;
-  for (int i = 1; i < pitches.size() - 1; i++)
-  {
-    sorting[0] = pitches[i - 1];
-    sorting[1] = pitches[i];
-    sorting[2] = pitches[i + 1];
-    for (int j = 0; j < 2; j++)
-    {
-      for (int k = 0; k < 2; k++)
-      {
-        if (sorting[k] > sorting[k + 1])
-        {
-          a = sorting[k + 1];
-          sorting[k + 1] = sorting[k];
-          sorting[k] = a;
-        }
-      }
-    }
-    sorted[i] = sorting[1];
-  }
-  pitches = sorted;
-}
-
+<img width="411" alt="image" src="https://user-images.githubusercontent.com/100561275/163587437-051ab542-9e02-4ded-95f6-d6340e08f25e.png">
+	
   También se valorará la realización de un estudio de los parámetros involucrados. Por ejemplo, si se opta
   por implementar el filtro de mediana, se valorará el análisis de los resultados obtenidos en función de
   la longitud del filtro.
